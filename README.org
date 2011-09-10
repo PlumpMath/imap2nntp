@@ -1,0 +1,5 @@
+#+TITLE: imap2nntp
+
+This script is used to feed IMAP articles into Leafnode's in.coming directory,
+after munging the mail to look like a proper NNTP article based on a
+group.mappings file.
