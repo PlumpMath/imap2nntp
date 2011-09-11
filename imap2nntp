@@ -143,9 +143,6 @@ for mailbox in mailboxes:
         print 'Mailbox message count %d does not match ALL query count %d' % \
             (count, len(data))
 
-    if opts.verbose:
-        print 'Scanning %d messages in mailbox %s...' % (len(data), mailbox)
-
     for num in data:
         typ, data  = imap.fetch(num, '(RFC822)')
         msg        = email.message_from_string(data[0][1])
