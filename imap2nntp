@@ -48,6 +48,9 @@ parser.add_option('-N', '--no-login', dest='no_login',
 parser.add_option('', '--copy', dest='no_delete',
                   default=False, action='store_true',
                   help='Copy messages into Leafnode, do not delete them from IMAP')
+parser.add_option('', '--reject', dest='reject',
+                  default=False, action='store_true',
+                  help='Do not spool into Leafnode; with --copy, this is a no-op')
 parser.add_option('-n', '--dry-run', dest='dry_run',
                   default=False, action='store_true',
                   help='Do not make any real changes, just give a preview')
@@ -188,25 +191,39 @@ for mailbox in mailboxes:
         if opts.verbose:
             print '%s:%s -> %s' % (mailbox, num, msg['Newsgroups'])
 
-        path = join(opts.spooldir, 'in.coming',
-                    time.strftime('%Y%m%dT%H%M%S') + '.' + str(num))
-        if isfile(path):
-            parser.error("Spool file '%s' already exists" % path)
-            continue
+        if not opts.reject:
+            accepted = False
+            tries = 0
+            index = int(num)
+            while not accepted and tries < 1000:
+                path = join(opts.spooldir, 'in.coming',
+                            time.strftime('%Y%m%dT%H%M%S') + '.' + str(index))
+                if isfile(path):
+                    index += 1
+                    tries += 1
+                else:
+                    accepted = True
+            if not accepted:
+                parser.error("Spool file '%s' already exists" % path)
+                continue
 
-        if not opts.dry_run:
-            with open(path, 'w') as fd:
-                fd.write(msg.as_string(unixfrom=True))
+            if not opts.dry_run:
+                with open(path, 'w') as fd:
+                    fd.write(msg.as_string(unixfrom=True))
 
-        written += 1
+            written += 1
 
         if not opts.no_delete:
             resp, data = imap.fetch(num, "(UID)")
             msg_uid    = parse_uid(data[0])
 
             if not opts.dry_run:
-                result = imap.uid('COPY', msg_uid, opts.trash)
-                if result[0] == 'OK':
+                if opts.trash:
+                    result = imap.uid('COPY', msg_uid, opts.trash)
+                    if result[0] == 'OK':
+                        imap.uid('STORE', msg_uid , '+FLAGS', '(\Deleted)')
+                        deleted += 1
+                else:
                     imap.uid('STORE', msg_uid , '+FLAGS', '(\Deleted)')
                     deleted += 1
 
