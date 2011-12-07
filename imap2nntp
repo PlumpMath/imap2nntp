@@ -38,7 +38,7 @@ import subprocess
 
 from os.path import join, isfile, isdir
 from socket import gethostname
-from email.Utils import getaddresses, make_msgid
+from email.Utils import getaddresses, make_msgid, formatdate
 
 parser = optparse.OptionParser(usage="usage: %prog [OPTS] <MAILBOX...>")
 
@@ -177,6 +177,22 @@ for mailbox in mailboxes:
         else:
             msgid = make_msgid(opts.hostname)
         msg['Message-Id'] = msgid
+
+        # Make sure there is exactly one Date header
+        if 'Date' in msg:
+            msgdate = msg['Date']
+            del msg['Date']
+        else:
+            msgdate = formatdate()
+        msg['Date'] = msgdate
+
+        # Make sure there is exactly one Subject header
+        if 'Subject' in msg:
+            msgsubj = msg['Subject']
+            del msg['Subject']
+        else:
+            msgdsubj = "(no subject)"
+        msg['Subject'] = msgsubj
 
         # Add the mappings that caused this message to match to the
         # Newsgroups header, if not already present
