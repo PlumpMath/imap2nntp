@@ -154,13 +154,14 @@ for mailbox in mailboxes:
         reply_tos  = msg.get_all('reply-to', [])
         resent_tos = msg.get_all('resent-to', [])
         resent_ccs = msg.get_all('resent-cc', [])
+        mlists     = msg.get_all('mailing-list', [])
 
         if opts.always_to:
             tos.append(opts.always_to)
 
         all_recipients = map(lambda x: x[1].lower(),
                              getaddresses(tos + ccs + reply_tos +
-                                          resent_tos + resent_ccs))
+                                          resent_tos + resent_ccs + mlists))
 
         group_list = [groups[a] for a in all_recipients if a in groups]
         group_list = list(set(group_list))
